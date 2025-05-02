@@ -6,8 +6,7 @@ import yfinance as yf
 
 # Load model and data files
 script_dir = os.path.dirname(os.path.abspath(__file__))
-model_path = os.path.join(script_dir, "market_model_compatible.pkl")
-
+model_path = os.path.join(script_dir, "market_model.pkl")
 sp500_path = os.path.join(script_dir, "aapl_sp500_volatility.csv")
 fed_path = os.path.join(script_dir, "fed_funds_rate.csv")
 sentiment_path = os.path.join(script_dir, "news_sentiment_data.xlsx")
