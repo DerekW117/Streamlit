@@ -1,6 +1,5 @@
 streamlit
 pandas
 scikit-learn==1.3.2
-yfinance==0.2.37
-openpyxl
-xgboost
+openpyxl   
+xgboost      
