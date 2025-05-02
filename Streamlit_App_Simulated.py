@@ -1,11 +1,4 @@
-# Export the final Streamlit App.py after all updates
-streamlit_app_path = "/mnt/data/Streamlit App.py"
 
-streamlit_code = """import streamlit as st
-import pandas as pd
-import joblib
-import os
-import yfinance as yf
 
 # Load model and data files
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -71,8 +64,3 @@ if st.button("Predict AAPL 7-Day Average Price"):
     prediction = model.predict(input_df)[0]
     st.success(f"📊 Predicted 7-day average AAPL price: ${prediction:.2f}")
 """
-
-with open(streamlit_app_path, "w", encoding="utf-8") as f:
-    f.write(streamlit_code)
-
-streamlit_app_path
