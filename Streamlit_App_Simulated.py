@@ -1,47 +1,58 @@
+# Export the final Streamlit App.py after all updates
+streamlit_app_path = "/mnt/data/Streamlit App.py"
 
-import streamlit as st
+streamlit_code = """import streamlit as st
 import pandas as pd
-import os
 import joblib
-import numpy as np
-from datetime import datetime, timedelta
+import os
+import yfinance as yf
 
-# 设置路径
+# Load model and data files
 script_dir = os.path.dirname(os.path.abspath(__file__))
 model_path = os.path.join(script_dir, "market_model.pkl")
+sp500_path = os.path.join(script_dir, "aapl_sp500_volatility.csv")
+fed_path = os.path.join(script_dir, "fed_funds_rate.csv")
+sentiment_path = os.path.join(script_dir, "news_sentiment_data.xlsx")
 
-# 安全加载模型
-model = None
-try:
-    model = joblib.load(model_path)
-except Exception as e:
-    st.warning(f"⚠️ 无法加载模型文件：{e}")
+model = joblib.load(model_path)
+data = pd.read_csv(sp500_path)
+fed_data = pd.read_csv(fed_path)
+sentiment_data = pd.read_excel(sentiment_path)
 
-# 应用标题和说明
+# Fetch AAPL historical data from Yahoo Finance
+aapl_data = yf.download("AAPL", period="5y")
+aapl_data.reset_index(inplace=True)
+aapl_data = aapl_data.sort_values('Date')
+aapl_data['7d_avg'] = aapl_data['Close'].shift(-1).rolling(window=7).mean()
+
 st.title("📈 AAPL Stock Price Predictor (Next 7-Day Average)")
-st.markdown("这个应用允许你输入宏观和情绪因子，用于预测苹果未来一周平均股价。")
+st.markdown("This app lets you input macro and sentiment factors to estimate Apple's average stock price over the next week.")
 
-# 用户输入
-fed_rate = st.slider("当前联邦基金利率（%）", 0.0, 10.0, 5.0, 0.25)
-sentiment = st.selectbox("经济新闻情绪是否乐观？", ["Yes", "No"])
+# User Inputs
+fed_rate = st.slider("Current Federal Funds Rate (%)", min_value=0.0, max_value=10.0, value=5.0, step=0.25)
+sentiment = st.selectbox("Is economic news sentiment optimistic?", options=["Yes", "No"])
 sentiment_val = 1 if sentiment == "Yes" else 0
-volatility = st.slider("市场波动性（1 = 低，10 = 高）", 1, 10, 5)
+
+volatility = st.slider("How volatile is the market? (1 = Low, 10 = High)", 1, 10, 5)
 volatility_score = volatility / 10
-volume_flag = st.selectbox("AAPL 最近交易量高吗？", ["Yes", "No"])
+
+volume_flag = st.selectbox("Is AAPL trading volume high recently?", options=["Yes", "No"])
 volume_val = 1 if volume_flag == "Yes" else 0
-sp500_trend = st.selectbox("标普500 是上涨还是下跌？", ["Rising", "Falling"])
+
+sp500_trend = st.selectbox("Has the S&P 500 been rising or falling?", options=["Rising", "Falling"])
 sp500_return = 1 if sp500_trend == "Rising" else 0
 
-# 展示输入特征
-st.markdown("### 特征说明")
-st.code("""
-FEDFUNDS: 联邦基金利率
-sentiment: 情绪（1 = 乐观，0 = 悲观）
-AAPL_21d_Volatility: 市场波动（归一化）
-AAPL_HighVolume: 交易量高（1 = 是）
-SP500_Return: 标普上涨（1 = 是）
-""")
+# Feature definition reminder
+st.markdown("### Feature Summary")
+st.code(\"\"\"
+FEDFUNDS: Federal funds interest rate
+sentiment: 1 = optimistic news, 0 = pessimistic
+AAPL_21d_Volatility: market volatility, normalized 0–1
+AAPL_HighVolume: 1 = high trading volume, 0 = low
+SP500_Return: 1 = S&P500 rising, 0 = falling
+\"\"\")
 
+# Construct input DataFrame
 input_df = pd.DataFrame({
     'FEDFUNDS': [fed_rate],
     'sentiment': [sentiment_val],
@@ -51,22 +62,17 @@ input_df = pd.DataFrame({
 })
 
 st.markdown("---")
-st.subheader("🔍 模型输入预览")
+st.subheader("🔍 Model Input Preview")
 st.write(input_df)
 st.markdown("---")
 
-# 预测按钮
-if st.button("预测苹果未来7日平均股价"):
-    if model is not None:
-        prediction = model.predict(input_df)[0]
-        st.success(f"📊 预测苹果未来7日平均股价为：${prediction:.2f}")
-    else:
-        st.error("❌ 模型未加载，无法进行预测。请联系管理员上传正确模型文件。")
+# Predict
+if st.button("Predict AAPL 7-Day Average Price"):
+    prediction = model.predict(input_df)[0]
+    st.success(f"📊 Predicted 7-day average AAPL price: ${prediction:.2f}")
+"""
 
-# 使用模拟的 AAPL 数据代替 yfinance 下载
-if st.checkbox("📉 查看模拟的 AAPL 历史股价走势"):
-    dates = pd.date_range(end=datetime.today(), periods=100)
-    prices = np.cumsum(np.random.normal(0.5, 2, size=100)) + 170  # 模拟从170开始涨跌
-    aapl_data = pd.DataFrame({'Date': dates, 'Close': prices})
-    aapl_data['7d_avg'] = aapl_data['Close'].shift(-1).rolling(window=7).mean()
-    st.line_chart(aapl_data.set_index('Date')[['Close', '7d_avg']])
+with open(streamlit_app_path, "w", encoding="utf-8") as f:
+    f.write(streamlit_code)
+
+streamlit_app_path
